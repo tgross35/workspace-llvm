@@ -10,15 +10,24 @@ default:
 	just --list
 
 # Configure Cmake
-configure:
+configure build-type="Debug":
+	#!/bin/sh
+	link_arg=""
+	if which mold 2> /dev/null; then
+		link_arg="-DLLVM_USE_LINKER=mold"
+	elif which lld 2> /dev/null; then
+		link_arg="-DLLVM_USE_LINKER=lld"
+	fi
+	
 	cmake "-S{{source_dir}}/llvm" "-B{{build_dir}}" \
 		-G Ninja \
 		-DCMAKE_C_COMPILER_LAUNCHER=sccache \
 		-DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=true \
-		-DCMAKE_BUILD_TYPE=Debug \
+		-DCMAKE_BUILD_TYPE={{build-type}} \
 		"-DCMAKE_INSTALL_PREFIX={{install_dir}}" \
-		"-DLLVM_ENABLE_PROJECTS={{projects}}"
+		"-DLLVM_ENABLE_PROJECTS={{projects}}" \
+		"$link_arg"
 
 # Build the project
 build:
