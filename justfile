@@ -7,6 +7,7 @@ targets := "AArch64;X86"
 launcher := "ccache"
 
 # Prefer mold then lld if available
+[unix]
 default_linker_arg := ```
 	link_arg=""
 	if which mold > /dev/null 2> /dev/null; then
@@ -22,25 +23,10 @@ linker_arg := if linker == "" { "" } else { "-DLLVM_USE_LINKER=" + linker }
 default:
 	"{{ just_executable() }}" --list
 
-# Note: the below does not work on Windows. I had to use the following:
-#
-# cmake -S .\llvm-project\llvm -B .\llvm-build\ -G Ninja \
-# 	-DCMAKE_C_COMPILER_LAUNCHER=ccache \
-# 	-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-# 	-DCMAKE_EXPORT_COMPILE_COMMANDS=true \
-# 	-DLLVM_USE_LINKER=lld \
-# 	"-DCMAKE_BUILD_TYPE=Debug" \
-# 	"-DLLVM_ENABLE_PROJECTS=clang" \
-# 	"-DLLVM_TARGETS_TO_BUILD=AArch64;X86" \
-# 	"-DCMAKE_INSTALL_PREFIX=.\local-install" \
-# 	"-DLLVM_HOST_TRIPLE=x86_64-pc-windows-msvc" 
-#
-# Specifically, the host triple needed to be set. I am not sure if setting the
-# linker to `lld` does anything.
-
 alias cfg := configure
 
-# Configure Cmake
+# Configure CMake
+[unix]
 configure build-type="Debug" projects="clang":
 	#!/bin/sh
 	# Hash all configurable parts 
@@ -63,6 +49,22 @@ configure build-type="Debug" projects="clang":
 		"-DCMAKE_INSTALL_PREFIX={{ install_dir }}" \
 		"-DLLVM_ENABLE_PROJECTS={{ projects }}" \
 		"-DLLVM_TARGETS_TO_BUILD={{ targets }}" \
+		"{{linker_arg}}"
+
+# Configure CMake
+[windows]
+configure build-type="Debug" projects="clang":
+	# Windows seems to require the host triple be set
+	cmake "-S{{ source_dir }}/llvm" "-B{{ build_dir }}" \
+		-G Ninja \
+		-DCMAKE_C_COMPILER_LAUNCHER={{ launcher }}\
+		-DCMAKE_CXX_COMPILER_LAUNCHER={{ launcher }}\
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=true \
+		"-DCMAKE_BUILD_TYPE={{ build-type }}" \
+		"-DCMAKE_INSTALL_PREFIX={{ install_dir }}" \
+		"-DLLVM_ENABLE_PROJECTS={{ projects }}" \
+		"-DLLVM_TARGETS_TO_BUILD={{ targets }}" \
+		"-DLLVM_HOST_TRIPLE=x86_64-pc-windows-msvc" \
 		"{{linker_arg}}"
 
 alias b := build
