@@ -3,6 +3,7 @@ build_dir := justfile_directory() / "llvm-build"
 install_dir := justfile_directory() / "local-install"
 config_hash_file := build_dir / ".configure-hash"
 bin_dir := build_dir / "bin"
+launcher := "ccache"
 
 # Prefer mold then lld if available
 default_linker_arg := ```
@@ -26,7 +27,7 @@ alias cfg := configure
 configure build-type="Debug" projects="clang":
 	#!/bin/sh
 	# Hash all configurable parts 
-	hash="{{ sha256(source_dir + build_dir + build-type + install_dir + projects + linker_arg) }}"
+	hash="{{ sha256(source_dir + build_dir + build-type + install_dir + projects + linker_arg + launcher) }}"
 	if [ "$hash" = "$(cat '{{config_hash_file}}')" ]; then
 		echo configuration up to date, skipping
 		exit
@@ -34,16 +35,16 @@ configure build-type="Debug" projects="clang":
 		echo config outdated, rerunning
 	fi
 
-	printf "$hash" > "{{config_hash_file}}"
+	printf "$hash" > "{{ config_hash_file }}"
 
-	cmake "-S{{source_dir}}/llvm" "-B{{build_dir}}" \
+	cmake "-S{{ source_dir }}/llvm" "-B{{ build_dir }}" \
 		-G Ninja \
-		-DCMAKE_C_COMPILER_LAUNCHER=sccache \
-		-DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+		-DCMAKE_C_COMPILER_LAUNCHER={{ launcher }}\
+		-DCMAKE_CXX_COMPILER_LAUNCHER={{ launcher }}\
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=true \
-		"-DCMAKE_BUILD_TYPE={{build-type}}" \
-		"-DCMAKE_INSTALL_PREFIX={{install_dir}}" \
-		"-DLLVM_ENABLE_PROJECTS={{projects}}" \
+		"-DCMAKE_BUILD_TYPE={{ build-type }}" \
+		"-DCMAKE_INSTALL_PREFIX={{ install_dir }}" \
+		"-DLLVM_ENABLE_PROJECTS={{ projects }}" \
 		"{{linker_arg}}"
 
 alias b := build
@@ -51,6 +52,10 @@ alias b := build
 # Build the project
 build: configure
 	cmake --build "{{build_dir}}"
+
+# Clean the build directory
+clean:
+	cmake --build "{{build_dir}}" --target clean
 
 # Run the LLVM test suite. Does not rebuild/reconfigure
 test-llvm: build
@@ -85,7 +90,10 @@ fmt *args:
 # Symlink configuration so C language servers work correctly
 configure-clangd: configure
 	#!/usr/bin/env sh
-	dst="{{ build_dir }}/compile_commands.json"
-	if ! [ -f "$dst" ]; then
-		ln -is "$dst" "{{ source_dir }}"
+	set -eaux
+	cmd_file="{{ build_dir / "compile_commands.json" }}"
+	if [ -f "$cmd_file" ]; then
+		ln -is "$cmd_file" "{{ source_dir }}"
+	else
+		echo "$cmd_file not found"
 	fi
