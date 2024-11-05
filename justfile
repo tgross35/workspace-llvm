@@ -73,7 +73,7 @@ install: build
 
 # Run Lit on the specified files
 lit +testfiles: build
-	"{{bin_dir}}/llvm-lit" {{testfiles}}
+	"{{bin_dir}}/llvm-lit" -v {{testfiles}}
 
 # Print the location of built binaries
 bindir:
