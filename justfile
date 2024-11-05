@@ -19,7 +19,7 @@ linker_arg := if linker == "" { "" } else { "-DLLVM_USE_LINKER=" + linker }
 
 # Print recipes and exit
 default:
-	{{ just_executable() }} --list
+	"{{ just_executable() }}" --list
 
 alias cfg := configure
 
