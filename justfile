@@ -7,7 +7,6 @@ targets := "AArch64;X86"
 launcher := "ccache"
 
 # Prefer mold then lld if available
-[unix]
 default_linker_arg := ```
 	link_arg=""
 	if which mold > /dev/null 2> /dev/null; then
@@ -94,6 +93,13 @@ install: build
 # Run Lit on the specified files
 lit +testfiles: build
 	"{{ bin_dir }}/llvm-lit" -v {{ testfiles }}
+
+# Update a llc test. Requires the build to be complete.
+[no-cd]
+test-update +testfiles:
+	"{{ source_dir }}/llvm/utils/update_llc_test_checks.py" -u \
+		--llc-binary "{{ build_dir }}/bin/llc" \
+		{{ testfiles }} \
 
 # Print the location of built binaries
 bindir:
