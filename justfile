@@ -76,15 +76,19 @@ build: configure
 clean:
 	cmake --build "{{ build_dir }}" --target clean
 
-# Run the LLVM test suite. Does not rebuild/reconfigure
+# Run the LLVM regression test suite. Does not rebuild/reconfigure
 test-llvm: build
 	ninja -C "{{ build_dir }}" check-llvm
-	# cmake "{{ build_dir }}" check-llvm
+
+# Run the Clang iregression test suite. Does not rebuild/reconfigure
+test-clang: build
+	ninja -C "{{ build_dir }}" check-clang
 
 # Run the complete test suite. Does not rebuild/reconfigure
 test: build
 	ninja -C "{{ build_dir }}" check-all
-	# cmake "{{ build_dir }}" check-all
+
+alias t := test
 
 # Install to the provided prefix. Does not rebuild/reconfigure
 install: build
