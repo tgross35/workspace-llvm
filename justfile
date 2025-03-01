@@ -71,7 +71,7 @@ configure build-type="Debug" projects="clang":
 alias b := build
 
 # Build the project
-build: configure
+build build-type="Debug" projects="clang": (configure build-type projects)
 	cmake --build "{{ build_dir }}"
 
 # Clean the build directory
