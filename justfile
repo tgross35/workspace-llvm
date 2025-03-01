@@ -3,7 +3,7 @@ build_dir := justfile_directory() / "llvm-build"
 install_dir := justfile_directory() / "local-install"
 config_hash_file := build_dir / ".configure-hash"
 bin_dir := build_dir / "bin"
-# targets := "AArch64;ARM;AVR;RISCV;SystemZ;X86"
+default_targets := "AArch64;ARM;AVR;RISCV;SystemZ;X86"
 launcher := "ccache"
 
 # Prefer mold then lld if available
@@ -17,6 +17,7 @@ default_linker_arg := ```
 ```
 linker := env("LLVM_USE_LINKER", default_linker_arg)
 linker_arg := if linker == "" { "" } else { "-DLLVM_USE_LINKER=" + linker }
+targets := env("LLVM_TARGETS", default_targets)
 
 # Print recipes and exit
 default:
@@ -24,15 +25,13 @@ default:
 
 alias cfg := configure
 
-#hash="{{ sha256(source_dir + build_dir + build-type + install_dir + projects + linker_arg + launcher + targets) }}"
-
 # Configure CMake
 [unix]
 configure build-type="Debug" projects="clang":
 	#!/bin/sh
 	# Hash all configurable parts 
 	set -eux
-	hash="{{ sha256(source_dir + build_dir + build-type + install_dir + projects + linker_arg + launcher) }}"
+	hash="{{ sha256(source_dir + build_dir + build-type + install_dir + projects + linker_arg + launcher + targets) }}"
 	if [ "$hash" = "$(cat '{{config_hash_file}}')" ]; then
 		echo configuration up to date, skipping
 		exit
@@ -50,8 +49,8 @@ configure build-type="Debug" projects="clang":
 		"-DCMAKE_BUILD_TYPE={{ build-type }}" \
 		"-DCMAKE_INSTALL_PREFIX={{ install_dir }}" \
 		"-DLLVM_ENABLE_PROJECTS={{ projects }}" \
+		"-DLLVM_TARGETS_TO_BUILD={{ targets }}" \
 		"{{linker_arg}}"
-# "-DLLVM_TARGETS_TO_BUILD={{ targets }}" \
 
 # Configure CMake
 [windows]
@@ -65,9 +64,9 @@ configure build-type="Debug" projects="clang":
 		"-DCMAKE_BUILD_TYPE={{ build-type }}" \
 		"-DCMAKE_INSTALL_PREFIX={{ install_dir }}" \
 		"-DLLVM_ENABLE_PROJECTS={{ projects }}" \
+		"-DLLVM_TARGETS_TO_BUILD={{ targets }}" \
 		"-DLLVM_HOST_TRIPLE=x86_64-pc-windows-msvc" \
 		"{{linker_arg}}"
-# "-DLLVM_TARGETS_TO_BUILD={{ targets }}" \
 
 alias b := build
 
