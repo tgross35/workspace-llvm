@@ -41,11 +41,15 @@ configure projects="clang" build-type="Debug":
 
 	printf "$hash" > "{{ config_hash_file }}"
 
+	# Shared libs and optimized tablegen speed up debug builds
 	cmake "-S{{ source_dir }}/llvm" "-B{{ build_dir }}" \
 		-G Ninja \
 		-DCMAKE_C_COMPILER_LAUNCHER={{ launcher }}\
 		-DCMAKE_CXX_COMPILER_LAUNCHER={{ launcher }}\
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=true \
+		-DBUILD_SHARED_LIBS=true \
+		-DLLVM_OPTIMIZED_TABLEGEN=true \
+		-DLLVM_ENABLE_ASSERTIONS=true \
 		"-DCMAKE_BUILD_TYPE={{ build-type }}" \
 		"-DCMAKE_INSTALL_PREFIX={{ install_dir }}" \
 		"-DLLVM_ENABLE_PROJECTS={{ projects }}" \
@@ -61,12 +65,19 @@ configure projects="clang" build-type="Debug":
 		-DCMAKE_C_COMPILER_LAUNCHER={{ launcher }}\
 		-DCMAKE_CXX_COMPILER_LAUNCHER={{ launcher }}\
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=true \
+		-DBUILD_SHARED_LIBS=true \
+		-DLLVM_OPTIMIZED_TABLEGEN=true \
+		-DLLVM_ENABLE_ASSERTIONS=true \
 		"-DCMAKE_BUILD_TYPE={{ build-type }}" \
 		"-DCMAKE_INSTALL_PREFIX={{ install_dir }}" \
 		"-DLLVM_ENABLE_PROJECTS={{ projects }}" \
 		"-DLLVM_TARGETS_TO_BUILD={{ targets }}" \
 		"-DLLVM_HOST_TRIPLE=x86_64-pc-windows-msvc" \
 		"{{linker_arg}}"
+
+# Delete the cache hash so configuration must run
+force-reconfigure:
+	rm "{{ config_hash_file }}"
 
 alias b := build
 
