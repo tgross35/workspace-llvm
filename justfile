@@ -27,7 +27,7 @@ alias cfg := configure
 
 # Configure CMake
 [unix]
-configure build-type="Debug" projects="clang":
+configure projects="clang" build-type="Debug":
 	#!/bin/sh
 	# Hash all configurable parts 
 	set -eux
@@ -54,7 +54,7 @@ configure build-type="Debug" projects="clang":
 
 # Configure CMake
 [windows]
-configure build-type="Debug" projects="clang":
+configure projects="clang" build-type="Debug":
 	# Windows seems to require the host triple be set
 	cmake "-S{{ source_dir }}/llvm" "-B{{ build_dir }}" \
 		-G Ninja \
@@ -71,7 +71,7 @@ configure build-type="Debug" projects="clang":
 alias b := build
 
 # Build the project
-build build-type="Debug" projects="clang": (configure build-type projects)
+build projects="clang" build-type="Debug": (configure projects build-type)
 	cmake --build "{{ build_dir }}"
 
 # Clean the build directory
